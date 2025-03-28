@@ -174,7 +174,24 @@
         }
         const markdown = await response.text();
         const html = marked.parse(markdown);
-        contentFrame.innerHTML = `<div class="markdown-content">${html}</div>`;
+
+        // Clear existing content
+        while (contentFrame.firstChild) {
+          contentFrame.removeChild(contentFrame.firstChild);
+        }
+
+        // Safely parse and insert HTML content
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'markdown-content';
+
+        // Move all nodes from the parsed document to our new div
+        while (doc.body.firstChild) {
+          contentDiv.appendChild(doc.body.firstChild);
+        }
+
+        contentFrame.appendChild(contentDiv);
 
         // Enable checkboxes and handle persistence
         const checkboxes = contentFrame.querySelectorAll('input[type="checkbox"]'); // Select all checkboxes, not just disabled
@@ -214,7 +231,20 @@
 
       } catch (error) {
         console.error('Error loading markdown:', error);
-        contentFrame.innerHTML = '<div class="markdown-content"><p>Error loading content. Please try again.</p></div>';
+
+        // Clear existing content
+        while (contentFrame.firstChild) {
+          contentFrame.removeChild(contentFrame.firstChild);
+        }
+
+        // Create error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'markdown-content';
+        const errorP = document.createElement('p');
+        errorP.textContent = 'Error loading content. Please try again.';
+        errorDiv.appendChild(errorP);
+        contentFrame.appendChild(errorDiv);
+
         resetButton.style.display = 'none'; // Hide button on error
         currentFilePath = null;
       }
@@ -227,7 +257,10 @@
         // Update hash, encode spaces etc. but preserve slashes if any
         window.location.hash = encodeURIComponent(filePath).replace(/%2F/g, "/");
       } else {
-        contentFrame.innerHTML = '';
+        // Clear content frame
+        while (contentFrame.firstChild) {
+          contentFrame.removeChild(contentFrame.firstChild);
+        }
         resetButton.style.display = 'none';
         currentFilePath = null;
         window.location.hash = ''; // Clear hash if no document selected
