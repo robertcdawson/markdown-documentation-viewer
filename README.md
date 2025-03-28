@@ -19,7 +19,7 @@ _Note: The Markdown page used here is an example, which represents a workflow fo
 
 1. Clone the repository:
 ```bash
-git clone [your-repository-url]
+git clone https://github.com/robertcdawson/markdown-documentation-viewer.git
 cd Documentation
 ```
 
