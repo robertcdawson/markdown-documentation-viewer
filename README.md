@@ -2,7 +2,7 @@
 
 A web-based Markdown documentation viewer
 
-Note: The Markdown page used here is an example, which represents a workflow for building software applications with the help of genAI.
+_Note: The Markdown page used here is an example, which represents a workflow for building software applications with the help of genAI._
 
 ## Features
 
