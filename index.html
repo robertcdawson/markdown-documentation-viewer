@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Documentation Viewer</title>
+  <!-- Include marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --text-color: #1f2937;
+      --bg-color: #ffffff;
+      --border-color: #e5e7eb;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: var(--primary-color);
+      font-size: 2.5rem;
+    }
+
+    .dropdown-container {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    select {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 0.5rem;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      cursor: pointer;
+      transition: border-color 0.2s;
+      min-width: 300px;
+    }
+
+    select:hover,
+    select:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+
+    .content-frame {
+      width: 100%;
+      height: min-content;
+      min-height: 300px;
+      border: 2px solid var(--border-color);
+      border-radius: 0.5rem;
+      background-color: var(--bg-color);
+    }
+
+    /* Markdown content styling */
+    .markdown-content {
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .markdown-content h1,
+    .markdown-content h2,
+    .markdown-content h3 {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      color: var(--primary-color);
+    }
+
+    .markdown-content p {
+      margin-bottom: 1rem;
+    }
+
+    .markdown-content ul,
+    .markdown-content ol {
+      margin-bottom: 1rem;
+      padding-left: 2rem;
+    }
+
+    .markdown-content li {
+      margin-bottom: 0.5rem;
+    }
+
+    .markdown-content code {
+      background-color: #f3f4f6;
+      padding: 0.2rem 0.4rem;
+      border-radius: 0.25rem;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    /* Style for completed task items */
+    .task-completed {
+      background-color: #e0f2fe;
+      /* Light blue background */
+      /* You could add other styles like line-through if desired */
+      /* text-decoration: line-through; */
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      select {
+        width: 100%;
+        max-width: 300px;
+      }
+
+      .content-frame {
+        height: calc(100vh - 150px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Markdown Documentation Viewer</h1>
+    <div class="dropdown-container">
+      <select id="docSelect" aria-label="Select documentation">
+        <option value="">Select a document...</option>
+        <option value="App Development Workflow.md">App Development Workflow</option>
+      </select>
+      <button id="resetButton" style="margin-top: 1rem; padding: 0.5rem 1rem; cursor: pointer; display: none;">Reset
+        Checklist</button>
+    </div>
+    <div class="content-frame" id="contentFrame"></div>
+  </div>
+
+  <script>
+    const docSelect = document.getElementById('docSelect');
+    const contentFrame = document.getElementById('contentFrame');
+    const resetButton = document.getElementById('resetButton');
+    let currentFilePath = null; // To store the currently loaded file path
+
+    // Function to generate a unique key for localStorage
+    function getStorageKey(filePath, checkboxIndex) {
+      // Using file path and index to ensure uniqueness
+      return `checkboxState_${filePath}_${checkboxIndex}`;
+    }
+
+    async function loadMarkdownContent(filePath) {
+      currentFilePath = filePath; // Store the current file path
+      try {
+        const response = await fetch(filePath);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const markdown = await response.text();
+        const html = marked.parse(markdown);
+        contentFrame.innerHTML = `<div class="markdown-content">${html}</div>`;
+
+        // Enable checkboxes and handle persistence
+        const checkboxes = contentFrame.querySelectorAll('input[type="checkbox"]'); // Select all checkboxes, not just disabled
+        let hasCheckboxes = false;
+
+        checkboxes.forEach((checkbox, index) => {
+          hasCheckboxes = true;
+          const storageKey = getStorageKey(filePath, index);
+          const savedState = localStorage.getItem(storageKey);
+          const listItem = checkbox.closest('li');
+
+          // Apply saved state if exists, otherwise use Markdown state
+          if (savedState !== null) {
+            checkbox.checked = savedState === 'true';
+          }
+
+          // Ensure checkbox is enabled
+          checkbox.disabled = false;
+
+          // Apply initial style based on current state (saved or from markdown)
+          if (listItem && checkbox.checked) {
+            listItem.classList.add('task-completed');
+          }
+
+          // Add event listener to toggle completed class and save state
+          checkbox.addEventListener('change', (event) => {
+            const isChecked = event.target.checked;
+            localStorage.setItem(storageKey, isChecked); // Save state
+            if (listItem) {
+              listItem.classList.toggle('task-completed', isChecked);
+            }
+          });
+        });
+
+        // Show or hide the reset button based on whether checkboxes were found
+        resetButton.style.display = hasCheckboxes ? 'inline-block' : 'none';
+
+      } catch (error) {
+        console.error('Error loading markdown:', error);
+        contentFrame.innerHTML = '<div class="markdown-content"><p>Error loading content. Please try again.</p></div>';
+        resetButton.style.display = 'none'; // Hide button on error
+        currentFilePath = null;
+      }
+    }
+
+    // Function to load content based on file path and update hash
+    function loadAndDisplayContent(filePath) {
+      if (filePath) {
+        loadMarkdownContent(filePath);
+        // Update hash, encode spaces etc. but preserve slashes if any
+        window.location.hash = encodeURIComponent(filePath).replace(/%2F/g, "/");
+      } else {
+        contentFrame.innerHTML = '';
+        resetButton.style.display = 'none';
+        currentFilePath = null;
+        window.location.hash = ''; // Clear hash if no document selected
+      }
+    }
+
+    docSelect.addEventListener('change', (e) => {
+      loadAndDisplayContent(e.target.value);
+    });
+
+    // Reset button functionality
+    resetButton.addEventListener('click', () => {
+      if (!currentFilePath) return;
+
+      const checkboxes = contentFrame.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach((checkbox, index) => {
+        const storageKey = getStorageKey(currentFilePath, index);
+        localStorage.removeItem(storageKey); // Clear saved state
+      });
+
+      // Reload the content to reflect the reset state (don't change hash here)
+      loadMarkdownContent(currentFilePath);
+    });
+
+    // Handle initial load based on URL hash
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.location.hash) {
+        try {
+          // Decode hash, replacing %20 with spaces etc.
+          const filePathFromHash = decodeURIComponent(window.location.hash.substring(1));
+          // Check if this file path exists as an option value
+          const optionExists = Array.from(docSelect.options).some(option => option.value === filePathFromHash);
+
+          if (optionExists) {
+            docSelect.value = filePathFromHash;
+            loadAndDisplayContent(filePathFromHash); // Use the function that also sets the hash correctly
+          } else {
+            console.warn(`File path from hash '${filePathFromHash}' not found in dropdown.`);
+            // Optionally clear the hash or load a default state
+            window.location.hash = '';
+          }
+        } catch (e) {
+          console.error("Error decoding or processing URL hash:", e);
+          window.location.hash = ''; // Clear invalid hash
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
