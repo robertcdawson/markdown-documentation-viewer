@@ -66,7 +66,7 @@
 
     .content-frame {
       width: 100%;
-      height: min-content;
+      height: auto;
       min-height: 300px;
       border: 2px solid var(--border-color);
       border-radius: 0.5rem;
@@ -112,9 +112,7 @@
     /* Style for completed task items */
     .task-completed {
       background-color: #e0f2fe;
-      /* Light blue background */
-      /* You could add other styles like line-through if desired */
-      /* text-decoration: line-through; */
+      text-decoration: line-through;
     }
 
     /* Responsive design */
@@ -146,6 +144,7 @@
       <select id="docSelect" aria-label="Select documentation">
         <option value="">Select a document...</option>
         <option value="App Development Workflow.md">App Development Workflow</option>
+        <option value="Intent Testing Framework.md">Intent Testing Framework</option>
       </select>
       <button id="resetButton" style="margin-top: 1rem; padding: 0.5rem 1rem; cursor: pointer; display: none;">Reset
         Checklist</button>
